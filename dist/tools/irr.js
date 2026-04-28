@@ -5,6 +5,7 @@ exports.solveIrrBisection = solveIrrBisection;
 exports.calculate_irr = calculate_irr;
 exports.calculate_term_loan_irr = calculate_term_loan_irr;
 exports.calculate_note_irr = calculate_note_irr;
+exports.get_amort_schedule = get_amort_schedule;
 exports.run_restructure_scenario = run_restructure_scenario;
 exports.compare_before_after_irr = compare_before_after_irr;
 exports.compare_all_scenarios = compare_all_scenarios;
@@ -186,6 +187,33 @@ async function calculate_note_irr(input) {
         tool: "calculate_note_irr",
         params: input,
         response_summary: summarize(payload),
+        ip_address: input.ip_address ?? "unknown"
+    });
+    return payload;
+}
+async function get_amort_schedule(input) {
+    const deal = await (0, db_1.findDealById)(input.deal_id);
+    if (!deal) {
+        throw new Error(`Deal not found: ${input.deal_id}`);
+    }
+    const schedule = buildSchedule({
+        principal: Number(deal.principal),
+        rate: Number(deal.rate),
+        io_months: Number(deal.io_months),
+        amort_months: Number(deal.amort_months),
+        orig_fee: Number(deal.orig_fee),
+        eot_fee: Number(deal.eot_fee),
+        warrant_fmv: Number(deal.warrant_fmv)
+    });
+    const payload = {
+        deal_id: input.deal_id,
+        schedule
+    };
+    await (0, logger_1.auditLog)({
+        user_id: "anonymous",
+        tool: "get_amort_schedule",
+        params: input,
+        response_summary: summarize({ deal_id: input.deal_id, rows: schedule.length }),
         ip_address: input.ip_address ?? "unknown"
     });
     return payload;

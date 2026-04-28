@@ -257,6 +257,51 @@ export async function calculate_note_irr(input: {
   return payload;
 }
 
+export async function get_amort_schedule(input: {
+  deal_id: string;
+  ip_address?: string;
+}): Promise<{
+  deal_id: string;
+  schedule: Array<{
+    month: number;
+    opening_balance: number;
+    interest: number;
+    principal: number;
+    total_payment: number;
+    closing_balance: number;
+  }>;
+}> {
+  const deal = await findDealById(input.deal_id);
+  if (!deal) {
+    throw new Error(`Deal not found: ${input.deal_id}`);
+  }
+
+  const schedule = buildSchedule({
+    principal: Number(deal.principal),
+    rate: Number(deal.rate),
+    io_months: Number(deal.io_months),
+    amort_months: Number(deal.amort_months),
+    orig_fee: Number(deal.orig_fee),
+    eot_fee: Number(deal.eot_fee),
+    warrant_fmv: Number(deal.warrant_fmv)
+  });
+
+  const payload = {
+    deal_id: input.deal_id,
+    schedule
+  };
+
+  await auditLog({
+    user_id: "anonymous",
+    tool: "get_amort_schedule",
+    params: input,
+    response_summary: summarize({ deal_id: input.deal_id, rows: schedule.length }),
+    ip_address: input.ip_address ?? "unknown"
+  });
+
+  return payload;
+}
+
 export async function run_restructure_scenario(input: {
   deal_id: string;
   scenario_type: "maturity_extension" | "rate_stepup" | "covenant_waiver";
