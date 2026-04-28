@@ -54,11 +54,19 @@ const documents_1 = require("./tools/documents");
 const inputSchemas = {
     get_portfolio_summary: zod_1.z.object({ ip_address: zod_1.z.string().optional() }),
     get_deal_metrics: zod_1.z.object({ deal_id: zod_1.z.string(), ip_address: zod_1.z.string().optional() }),
+    get_deal_cash_flows: zod_1.z.object({ deal_id: zod_1.z.string(), months: zod_1.z.number().int().positive().optional(), ip_address: zod_1.z.string().optional() }),
     get_covenant_alerts: zod_1.z.object({ ip_address: zod_1.z.string().optional() }),
     search_precedent_deals: zod_1.z.object({
         sector: zod_1.z.string().optional(),
         deal_size_min: zod_1.z.number().optional(),
         deal_size_max: zod_1.z.number().optional(),
+        ip_address: zod_1.z.string().optional()
+    }),
+    search_comparable_deals: zod_1.z.object({
+        sector: zod_1.z.string().optional(),
+        deal_size_min: zod_1.z.number().optional(),
+        deal_size_max: zod_1.z.number().optional(),
+        tolerance_pct: zod_1.z.number().optional(),
         ip_address: zod_1.z.string().optional()
     }),
     calculate_irr: zod_1.z.object({
@@ -71,10 +79,68 @@ const inputSchemas = {
         warrant_fmv: zod_1.z.number(),
         ip_address: zod_1.z.string().optional()
     }),
+    calculate_term_loan_irr: zod_1.z.object({
+        principal: zod_1.z.number(),
+        rate: zod_1.z.number(),
+        io_months: zod_1.z.number().int().nonnegative(),
+        amort_months: zod_1.z.number().int().positive(),
+        orig_fee: zod_1.z.number(),
+        eot_fee: zod_1.z.number(),
+        warrant_fmv: zod_1.z.number(),
+        ip_address: zod_1.z.string().optional()
+    }),
+    calculate_note_irr: zod_1.z.object({
+        principal: zod_1.z.number(),
+        annual_coupon_rate: zod_1.z.number(),
+        term_months: zod_1.z.number().int().positive(),
+        upfront_fee: zod_1.z.number(),
+        exit_fee: zod_1.z.number(),
+        ip_address: zod_1.z.string().optional()
+    }),
+    calculate_warrant_irr: zod_1.z.object({
+        coverage: zod_1.z.number(),
+        strike_val: zod_1.z.number(),
+        fd_shares: zod_1.z.number(),
+        scenarios: zod_1.z.array(zod_1.z.number()),
+        probabilities: zod_1.z.array(zod_1.z.number()),
+        ip_address: zod_1.z.string().optional()
+    }),
+    calculate_conv_note_irr: zod_1.z.object({
+        principal: zod_1.z.number(),
+        term_months: zod_1.z.number().int().positive(),
+        coupon_rate: zod_1.z.number(),
+        up_round_value: zod_1.z.number(),
+        flat_round_value: zod_1.z.number(),
+        down_round_value: zod_1.z.number(),
+        p_up: zod_1.z.number(),
+        p_flat: zod_1.z.number(),
+        p_down: zod_1.z.number(),
+        ip_address: zod_1.z.string().optional()
+    }),
     run_restructure_scenario: zod_1.z.object({
         deal_id: zod_1.z.string(),
         scenario_type: zod_1.z.enum(["maturity_extension", "rate_stepup", "covenant_waiver"]),
         params: zod_1.z.record(zod_1.z.string(), zod_1.z.number()),
+        ip_address: zod_1.z.string().optional()
+    }),
+    compare_before_after_irr: zod_1.z.object({
+        deal_id: zod_1.z.string(),
+        scenario_type: zod_1.z.enum(["maturity_extension", "rate_stepup", "covenant_waiver"]),
+        params: zod_1.z.record(zod_1.z.string(), zod_1.z.number()),
+        ip_address: zod_1.z.string().optional()
+    }),
+    compare_all_scenarios: zod_1.z.object({
+        deal_id: zod_1.z.string(),
+        ip_address: zod_1.z.string().optional()
+    }),
+    get_outstanding_at_breach: zod_1.z.object({
+        deal_id: zod_1.z.string(),
+        breach_month: zod_1.z.number().int().positive(),
+        ip_address: zod_1.z.string().optional()
+    }),
+    calculate_dpo_breakeven: zod_1.z.object({
+        deal_id: zod_1.z.string(),
+        settlement_month: zod_1.z.number().int().positive(),
         ip_address: zod_1.z.string().optional()
     }),
     generate_warrant_irr: zod_1.z.object({
@@ -107,17 +173,28 @@ const inputSchemas = {
     })
 };
 const toolHandlers = {
-    get_portfolio_summary: portfolio_1.get_portfolio_summary, get_deal_metrics: portfolio_1.get_deal_metrics, get_covenant_alerts: portfolio_1.get_covenant_alerts, search_precedent_deals: portfolio_1.search_precedent_deals,
-    calculate_irr: irr_1.calculate_irr, run_restructure_scenario: irr_1.run_restructure_scenario, generate_warrant_irr: irr_1.generate_warrant_irr,
+    get_portfolio_summary: portfolio_1.get_portfolio_summary, get_deal_metrics: portfolio_1.get_deal_metrics, get_deal_cash_flows: portfolio_1.get_deal_cash_flows, get_covenant_alerts: portfolio_1.get_covenant_alerts, search_precedent_deals: portfolio_1.search_precedent_deals, search_comparable_deals: portfolio_1.search_comparable_deals,
+    calculate_irr: irr_1.calculate_irr, calculate_term_loan_irr: irr_1.calculate_term_loan_irr, calculate_note_irr: irr_1.calculate_note_irr, calculate_warrant_irr: irr_1.calculate_warrant_irr, calculate_conv_note_irr: irr_1.calculate_conv_note_irr,
+    run_restructure_scenario: irr_1.run_restructure_scenario, compare_before_after_irr: irr_1.compare_before_after_irr, compare_all_scenarios: irr_1.compare_all_scenarios, get_outstanding_at_breach: irr_1.get_outstanding_at_breach, calculate_dpo_breakeven: irr_1.calculate_dpo_breakeven, generate_warrant_irr: irr_1.generate_warrant_irr,
     generate_term_sheet: documents_1.generate_term_sheet, create_irr_model: documents_1.create_irr_model, generate_restructure_memo: documents_1.generate_restructure_memo
 };
 const toolDefinitions = [
     { name: "get_portfolio_summary", description: "Returns aggregate portfolio metrics: deal count, total AUM, avg EIR, weighted avg tenor" },
     { name: "get_deal_metrics", description: "Returns deal metrics for a given deal_id: IRR, MOIC, covenant status, days to maturity" },
+    { name: "get_deal_cash_flows", description: "Returns projected vs actual monthly payment history for a deal" },
     { name: "get_covenant_alerts", description: "Returns deals at covenant breach risk, severity-ranked" },
     { name: "search_precedent_deals", description: "Returns statistical ranges for precedent deals by sector and size" },
+    { name: "search_comparable_deals", description: "Returns anonymized statistical ranges for comparable historical deals" },
     { name: "calculate_irr", description: "Calculates EIR and cash flow sensitivity table from deal parameters" },
+    { name: "calculate_term_loan_irr", description: "Runs term loan IRR solver and returns schedule, MOIC and fee decomposition" },
+    { name: "calculate_note_irr", description: "Calculates bullet/note structure IRR from coupon and maturity terms" },
+    { name: "calculate_warrant_irr", description: "Runs Black-Scholes FMV and returns exit scenarios with payoff and IRR" },
+    { name: "calculate_conv_note_irr", description: "Builds 3-scenario probability tree and returns expected IRR" },
     { name: "run_restructure_scenario", description: "Runs a restructure scenario on a deal and returns updated IRR" },
+    { name: "compare_before_after_irr", description: "Compares base vs restructured IRR and returns basis-point breakdown" },
+    { name: "compare_all_scenarios", description: "Runs all six restructure pathways and returns scenario comparison table" },
+    { name: "get_outstanding_at_breach", description: "Computes outstanding balance and accrued interest at breach month" },
+    { name: "calculate_dpo_breakeven", description: "Finds settlement percentage where lender IRR equals original EIR" },
     { name: "generate_warrant_irr", description: "Computes Black-Scholes warrant valuation and expected IRR" },
     { name: "generate_term_sheet", description: "Generates a formatted term sheet from a local template" },
     { name: "create_irr_model", description: "Builds a structured JSON Excel-model specification" },

@@ -11,6 +11,7 @@
     "dev": "ts-node src/server.ts",
     "test:integration": "ts-node tests/integration/run.ts",
     "test:mongo": "ts-node tests/integration/mongo-connection-smoke.ts",
+    "test:tools": "ts-node tests/integration/tool-smoke.ts",
     "seed": "ts-node database/seed.ts"
   },
   "dependencies": {
