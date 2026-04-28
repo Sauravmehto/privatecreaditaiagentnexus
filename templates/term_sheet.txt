@@ -1,0 +1,9 @@
+Private Credit Term Sheet Template
+---------------------------------
+Borrower: [REDACTED]
+Facility Amount: [AMOUNT]
+Tenor: [TENOR]
+Interest Rate: [RATE]
+Security: [SECURITY PACKAGE]
+Covenants: [KEY COVENANTS]
+Notes: This template is for structured extraction only.

@@ -1,0 +1,13 @@
+deal_id,company_name,sector,instrument_type,principal_usd,interest_rate,io_months,amort_months,irr,moic,covenant_status,days_to_maturity,outstanding_balance_usd,origination_fee,end_of_term_fee,warrant_coverage,funding_stage,lead_vc
+VD-2023-0101,Axon Therapeutics,Healthcare / Biotech,Term Loan,3000000,0.1215,12,18,0.1484,1.22,Breach Risk,283,1356000,0.0083,0.0321,0.0,Series B,Andreessen Horowitz
+VD-2023-0102,NovaDrive Systems,Clean Energy / EV,Term Loan + Warrant,7500000,0.1686,6,18,0.2124,1.32,Compliant,412,3460000,0.0155,0.0202,0.0811,Series C,General Catalyst
+VD-2023-0103,Meridian SaaS,B2B SaaS,Convertible Note,3000000,0.1531,12,36,0.1598,1.48,Compliant,163,2592000,0.0079,0.0121,0.0,Series B,Accel Partners
+VD-2023-0104,Crestline Robotics,Deep Tech / Robotics,Revolver + Term Loan,12000000,0.1450,9,24,0.1780,1.36,Compliant,520,9800000,0.0120,0.0250,0.0,Series C,Sequoia Capital
+VD-2023-0105,BlueSky Fintech,Fintech,Term Loan + Warrant,5000000,0.1390,6,18,0.1950,1.29,Watch,198,4200000,0.0100,0.0180,0.1200,Series B,Lightspeed Ventures
+VD-2023-0106,Solara Energy,Clean Energy,Term Loan,20000000,0.1250,18,30,0.1480,1.43,Compliant,340,14000000,0.0075,0.0150,0.0,Series D,Tiger Global
+VD-2024-0107,Quantum Bridge,Deep Tech / AI,Convertible Note,7500000,0.1600,12,24,0.1870,1.37,Watch,445,7500000,0.0130,0.0300,0.0,Series B,Andreessen Horowitz
+VD-2024-0108,HarbourPlex Logistics,Supply Chain / Logistics,Revolver + Term Loan,15000000,0.1320,9,30,0.1560,1.39,Compliant,610,11250000,0.0095,0.0200,0.0,Series C,Insight Partners
+VD-2024-0109,Veritas Diagnostics,Healthcare / MedTech,Term Loan + Warrant,10000000,0.1470,12,24,0.2010,1.40,Breach Risk,362,8500000,0.0110,0.0225,0.0950,Series C,General Catalyst
+VD-2024-0110,Nimbus Cloud,B2B SaaS / Infrastructure,Term Loan,20000000,0.1280,18,30,0.1510,1.38,Compliant,550,16000000,0.0080,0.0160,0.0,Series D,Sequoia Capital
+VD-2024-0111,Titan Semiconductors,Deep Tech / Chips,Term Loan + Warrant,12000000,0.1550,12,24,0.2200,1.44,Compliant,490,12000000,0.0140,0.0280,0.1500,Series C,Intel Capital
+VD-2024-0112,ClearPath Analytics,Data / AI,Convertible Note,5000000,0.1620,9,27,0.1880,1.51,Breach Risk,221,5000000,0.0105,0.0195,0.0,Series B,Accel Partners

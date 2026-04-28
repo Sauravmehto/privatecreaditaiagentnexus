@@ -1,0 +1,42 @@
+[
+  {
+    "user_id": "user_analyst_001",
+    "tool": "get_portfolio_summary",
+    "params": "{}",
+    "response_summary": "Returned portfolio summary: 12 deals, total AUM $119.5M, avg IRR 18.1%",
+    "timestamp": "2025-04-01T09:15:32Z",
+    "ip_address": "192.168.1.10"
+  },
+  {
+    "user_id": "user_partner_001",
+    "tool": "get_deal_metrics",
+    "params": "{\"deal_id\": \"VD-2024-0109\"}",
+    "response_summary": "Returned full metrics for Veritas Diagnostics including company name (partner access)",
+    "timestamp": "2025-04-01T10:02:11Z",
+    "ip_address": "192.168.1.22"
+  },
+  {
+    "user_id": "user_analyst_001",
+    "tool": "get_covenant_alerts",
+    "params": "{}",
+    "response_summary": "Returned 3 deals in Breach Risk or Watch status. Company names redacted.",
+    "timestamp": "2025-04-02T08:45:00Z",
+    "ip_address": "192.168.1.10"
+  },
+  {
+    "user_id": "user_manager_001",
+    "tool": "calculate_irr",
+    "params": "{\"principal\": 5000000, \"rate\": 0.145, \"io_months\": 12, \"amort_months\": 24, \"orig_fee\": 0.01, \"eot_fee\": 0.02, \"warrant_fmv\": 0}",
+    "response_summary": "Computed EIR: 17.3%. Cash flow schedule returned. Sensitivity table included.",
+    "timestamp": "2025-04-02T11:30:45Z",
+    "ip_address": "192.168.1.15"
+  },
+  {
+    "user_id": "user_partner_001",
+    "tool": "generate_term_sheet",
+    "params": "{\"company_name\": \"NewCo Ltd\", \"principal\": 8000000, \"rate\": 0.15}",
+    "response_summary": "Term sheet draft generated for NewCo Ltd. $8M Term Loan at 15%.",
+    "timestamp": "2025-04-03T14:10:00Z",
+    "ip_address": "192.168.1.22"
+  }
+]
