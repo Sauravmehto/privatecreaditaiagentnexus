@@ -21,6 +21,7 @@ import {
   calculate_conv_note_irr,
   calculate_dpo_breakeven,
   calculate_irr,
+  get_amort_schedule,
   calculate_note_irr,
   calculate_term_loan_irr,
   calculate_warrant_irr,
@@ -59,6 +60,10 @@ const inputSchemas = {
     orig_fee: z.number(),
     eot_fee: z.number(),
     warrant_fmv: z.number(),
+    ip_address: z.string().optional()
+  }),
+  get_amort_schedule: z.object({
+    deal_id: z.string(),
     ip_address: z.string().optional()
   }),
   calculate_term_loan_irr: z.object({
@@ -157,7 +162,7 @@ const inputSchemas = {
 
 const toolHandlers = {
   get_portfolio_summary, get_deal_metrics, get_deal_cash_flows, get_covenant_alerts, search_precedent_deals, search_comparable_deals,
-  calculate_irr, calculate_term_loan_irr, calculate_note_irr, calculate_warrant_irr, calculate_conv_note_irr,
+  calculate_irr, get_amort_schedule, calculate_term_loan_irr, calculate_note_irr, calculate_warrant_irr, calculate_conv_note_irr,
   run_restructure_scenario, compare_before_after_irr, compare_all_scenarios, get_outstanding_at_breach, calculate_dpo_breakeven, generate_warrant_irr,
   generate_term_sheet, create_irr_model, generate_restructure_memo
 };
@@ -170,6 +175,7 @@ const toolDefinitions = [
   { name: "search_precedent_deals",    description: "Returns statistical ranges for precedent deals by sector and size" },
   { name: "search_comparable_deals",   description: "Returns anonymized statistical ranges for comparable historical deals" },
   { name: "calculate_irr",             description: "Calculates EIR and cash flow sensitivity table from deal parameters" },
+  { name: "get_amort_schedule",        description: "Returns month-by-month principal and interest amortization schedule for a deal" },
   { name: "calculate_term_loan_irr",   description: "Runs term loan IRR solver and returns schedule, MOIC and fee decomposition" },
   { name: "calculate_note_irr",        description: "Calculates bullet/note structure IRR from coupon and maturity terms" },
   { name: "calculate_warrant_irr",     description: "Runs Black-Scholes FMV and returns exit scenarios with payoff and IRR" },
@@ -184,6 +190,23 @@ const toolDefinitions = [
   { name: "create_irr_model",          description: "Builds a structured JSON Excel-model specification" },
   { name: "generate_restructure_memo", description: "Generates a full credit committee restructure memo with all scenarios" }
 ];
+
+function normalizeArgs(toolName: string, rawArgs: unknown): unknown {
+  const args = (rawArgs ?? {}) as Record<string, unknown>;
+
+  // Allow "calculate_irr" calls in nested model-style format:
+  // { instrument_type, params: { principal, rate, ... } }
+  if (toolName === "calculate_irr" && args.params && typeof args.params === "object") {
+    const nested = args.params as Record<string, unknown>;
+    return {
+      ...nested,
+      ip_address: typeof args.ip_address === "string" ? args.ip_address : undefined,
+      warrant_fmv: typeof nested.warrant_fmv === "number" ? nested.warrant_fmv : 0
+    };
+  }
+
+  return args;
+}
 
 // ── Build a fresh MCP Server instance ─────────────────────────────────────────
 function buildMcpServer(): Server {
@@ -207,7 +230,8 @@ function buildMcpServer(): Server {
       if (!schema || !handler) {
         return { content: [{ type: "text", text: `Unknown tool: ${name}` }], isError: true };
       }
-      const validatedArgs = schema.parse(args ?? {});
+      const normalizedArgs = normalizeArgs(name, args);
+      const validatedArgs = schema.parse(normalizedArgs);
       const response = await handler(validatedArgs as never);
       return { content: [{ type: "text", text: JSON.stringify(response, null, 2) }] };
     } catch (error) {
