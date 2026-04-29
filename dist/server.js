@@ -206,15 +206,26 @@ const toolDefinitions = [
     { name: "generate_restructure_memo", description: "Generates a full credit committee restructure memo with all scenarios" }
 ];
 function normalizeArgs(toolName, rawArgs) {
-    const args = (rawArgs ?? {});
-    // Allow "calculate_irr" calls in nested model-style format:
-    // { instrument_type, params: { principal, rate, ... } }
+    let args = (rawArgs ?? {});
+    // Unnest model-style format: { instrument_type, params: { principal, rate, ... } }
     if (toolName === "calculate_irr" && args.params && typeof args.params === "object") {
         const nested = args.params;
-        return {
+        args = {
             ...nested,
             ip_address: typeof args.ip_address === "string" ? args.ip_address : undefined,
             warrant_fmv: typeof nested.warrant_fmv === "number" ? nested.warrant_fmv : 0
+        };
+    }
+    // Normalize ratio fees → dollar amounts for tools that accept orig_fee / eot_fee
+    if (toolName === "calculate_irr" || toolName === "calculate_term_loan_irr" || toolName === "generate_term_sheet") {
+        const principal = Number(args.principal ?? 0);
+        const origFee = Number(args.orig_fee ?? 0);
+        const eotFee = Number(args.eot_fee ?? 0);
+        args = {
+            ...args,
+            orig_fee: origFee < 1 ? origFee * principal : origFee,
+            eot_fee: eotFee < 1 ? eotFee * principal : eotFee,
+            warrant_fmv: typeof args.warrant_fmv === "number" ? args.warrant_fmv : (toolName === "generate_term_sheet" ? args.warrant_fmv : 0)
         };
     }
     return args;

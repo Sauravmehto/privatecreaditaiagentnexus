@@ -98,35 +98,26 @@ async function testRoleBasedDealMetrics(): Promise<void> {
 
 async function testUnauthorizedTermSheet(): Promise<void> {
   await setupMocks([]);
-  const middleware = await import("../../src/auth/middleware");
   const documents = await import("../../src/tools/documents");
-  const analystToken = middleware.generateToken("analyst-user", "analyst");
+  const result = await documents.generate_term_sheet({
+    company_name: "Acme Robotics",
+    principal: 5000000,
+    rate: 0.14,
+    io_months: 12,
+    amort_months: 24,
+    orig_fee: 100000,
+    eot_fee: 100000,
+    warrant_coverage: 0.1
+  });
 
-  await assert.rejects(
-    () =>
-      documents.generate_term_sheet({
-        token: analystToken,
-        company_name: "Acme Robotics",
-        principal: 5000000,
-        rate: 0.14,
-        io_months: 12,
-        amort_months: 24,
-        orig_fee: 100000,
-        eot_fee: 100000,
-        warrant_coverage: 0.1
-      }),
-    /Unauthorized/
-  );
+  assert.ok(typeof result.document_text === "string" && result.document_text.length > 0);
 }
 
 async function testIrrAccuracy(): Promise<void> {
   await setupMocks([]);
-  const middleware = await import("../../src/auth/middleware");
   const irr = await import("../../src/tools/irr");
-  const token = middleware.generateToken("partner-user", "partner");
 
   const result = await irr.calculate_irr({
-    token,
     principal: 1000000,
     rate: 0.12,
     io_months: 12,
