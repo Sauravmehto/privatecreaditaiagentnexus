@@ -300,27 +300,66 @@ async function start(): Promise<void> {
   // ══════════════════════════════════════════════════════════════════════════
   const httpSessions = new Map<string, StreamableHTTPServerTransport>();
 
+  function createHttpTransport(): StreamableHTTPServerTransport {
+    let initializedSessionId: string | undefined;
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: () => randomUUID(),
+      onsessioninitialized: (id) => {
+        initializedSessionId = id;
+        httpSessions.set(id, transport);
+      }
+    });
+    transport.onclose = () => {
+      if (initializedSessionId) {
+        httpSessions.delete(initializedSessionId);
+      }
+    };
+    return transport;
+  }
+
   const mcpHandler = async (req: Request, res: Response): Promise<void> => {
     const sessionId = req.headers["mcp-session-id"] as string | undefined;
     try {
-      let transport: StreamableHTTPServerTransport;
-      if (sessionId && httpSessions.has(sessionId)) {
-        transport = httpSessions.get(sessionId)!;
-      } else {
-        const newId = randomUUID();
-        transport = new StreamableHTTPServerTransport({
-          sessionIdGenerator: () => newId,
-          onsessioninitialized: (id) => { httpSessions.set(id, transport); }
-        });
-        transport.onclose = () => { httpSessions.delete(newId); };
+      let transport = sessionId ? httpSessions.get(sessionId) : undefined;
+      if (!transport) {
+        transport = createHttpTransport();
         await buildMcpServer().connect(transport);
       }
       await transport.handleRequest(req, res, req.body);
     } catch (err) {
-      logger.error("mcp_http_error", { error: err instanceof Error ? err.message : String(err) });
-      if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
+      const errMsg = err instanceof Error ? err.message : String(err);
+      logger.error("mcp_http_error", { error: errMsg, session_id: sessionId });
+
+      // Self-heal stale/broken StreamableHTTP sessions by recreating once.
+      if (sessionId && httpSessions.has(sessionId) && !res.headersSent) {
+        try {
+          httpSessions.delete(sessionId);
+          const retryTransport = createHttpTransport();
+          await buildMcpServer().connect(retryTransport);
+          await retryTransport.handleRequest(req, res, req.body);
+          return;
+        } catch (retryErr) {
+          logger.error("mcp_http_retry_error", {
+            error: retryErr instanceof Error ? retryErr.message : String(retryErr),
+            session_id: sessionId
+          });
+        }
+      }
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Internal server error" });
+      }
     }
   };
+
+  const cleanupHttpSessions = (): void => {
+    // Defensive cleanup for stale map entries.
+    for (const [id, transport] of httpSessions.entries()) {
+      if (!transport) {
+        httpSessions.delete(id);
+      }
+    }
+  };
+  setInterval(cleanupHttpSessions, 5 * 60 * 1000).unref();
 
   app.post("/mcp", mcpHandler);
   app.get("/mcp", mcpHandler);

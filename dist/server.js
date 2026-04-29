@@ -297,30 +297,65 @@ async function start() {
     // PROTOCOL 2: Streamable HTTP  (POST/GET/DELETE /mcp)
     // ══════════════════════════════════════════════════════════════════════════
     const httpSessions = new Map();
+    function createHttpTransport() {
+        let initializedSessionId;
+        const transport = new streamableHttp_js_1.StreamableHTTPServerTransport({
+            sessionIdGenerator: () => (0, node_crypto_1.randomUUID)(),
+            onsessioninitialized: (id) => {
+                initializedSessionId = id;
+                httpSessions.set(id, transport);
+            }
+        });
+        transport.onclose = () => {
+            if (initializedSessionId) {
+                httpSessions.delete(initializedSessionId);
+            }
+        };
+        return transport;
+    }
     const mcpHandler = async (req, res) => {
         const sessionId = req.headers["mcp-session-id"];
         try {
-            let transport;
-            if (sessionId && httpSessions.has(sessionId)) {
-                transport = httpSessions.get(sessionId);
-            }
-            else {
-                const newId = (0, node_crypto_1.randomUUID)();
-                transport = new streamableHttp_js_1.StreamableHTTPServerTransport({
-                    sessionIdGenerator: () => newId,
-                    onsessioninitialized: (id) => { httpSessions.set(id, transport); }
-                });
-                transport.onclose = () => { httpSessions.delete(newId); };
+            let transport = sessionId ? httpSessions.get(sessionId) : undefined;
+            if (!transport) {
+                transport = createHttpTransport();
                 await buildMcpServer().connect(transport);
             }
             await transport.handleRequest(req, res, req.body);
         }
         catch (err) {
-            logger_1.logger.error("mcp_http_error", { error: err instanceof Error ? err.message : String(err) });
-            if (!res.headersSent)
+            const errMsg = err instanceof Error ? err.message : String(err);
+            logger_1.logger.error("mcp_http_error", { error: errMsg, session_id: sessionId });
+            // Self-heal stale/broken StreamableHTTP sessions by recreating once.
+            if (sessionId && httpSessions.has(sessionId) && !res.headersSent) {
+                try {
+                    httpSessions.delete(sessionId);
+                    const retryTransport = createHttpTransport();
+                    await buildMcpServer().connect(retryTransport);
+                    await retryTransport.handleRequest(req, res, req.body);
+                    return;
+                }
+                catch (retryErr) {
+                    logger_1.logger.error("mcp_http_retry_error", {
+                        error: retryErr instanceof Error ? retryErr.message : String(retryErr),
+                        session_id: sessionId
+                    });
+                }
+            }
+            if (!res.headersSent) {
                 res.status(500).json({ error: "Internal server error" });
+            }
         }
     };
+    const cleanupHttpSessions = () => {
+        // Defensive cleanup for stale map entries.
+        for (const [id, transport] of httpSessions.entries()) {
+            if (!transport) {
+                httpSessions.delete(id);
+            }
+        }
+    };
+    setInterval(cleanupHttpSessions, 5 * 60 * 1000).unref();
     app.post("/mcp", mcpHandler);
     app.get("/mcp", mcpHandler);
     app.delete("/mcp", mcpHandler);

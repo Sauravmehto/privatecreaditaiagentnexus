@@ -131,7 +131,8 @@ async function calculate_irr(input) {
     const sensitivity_table = {};
     for (const bump of [-0.02, -0.01, 0, 0.01, 0.02]) {
         const scenarioFlows = buildCashFlows({ ...input, rate: input.rate + bump });
-        sensitivity_table[(input.rate + bump).toFixed(4)] = (1 + calculateIrrValue(scenarioFlows)) ** 12 - 1;
+        const scenarioIrr = solveIrrBisection(scenarioFlows);
+        sensitivity_table[(input.rate + bump).toFixed(4)] = (1 + scenarioIrr) ** 12 - 1;
     }
     const payload = { eir, cash_flow_schedule: cashFlows, sensitivity_table };
     await (0, logger_1.auditLog)({
